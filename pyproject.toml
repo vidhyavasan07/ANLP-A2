@@ -1,0 +1,24 @@
+[project]
+name = "anlp-a2"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "vidhyavasan07", email = "vidhyavasan04@gmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "datasets>=5.0.1",
+    "requests>=2.34.2",
+    "sacrebleu>=2.6.0",
+    "torch>=2.14.0",
+    "transformers>=5.17.0",
+    "wandb>=0.30.0",
+]
+
+[project.scripts]
+anlp-a2 = "anlp_a2:main"
+
+[build-system]
+requires = ["uv_build>=0.12.12,<0.13.0"]
+build-backend = "uv_build"
