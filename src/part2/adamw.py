@@ -84,3 +84,4 @@ if __name__ == "__main__":
             opt.step()
 
     print("max abs diff vs torch AdamW:", (w1 - w2).abs().max().item())
+    
