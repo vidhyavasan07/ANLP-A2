@@ -11,6 +11,7 @@ Install:
 import argparse
 import math
 import os
+from pyexpat import model
 import time
 
 import torch
@@ -20,11 +21,12 @@ from transformers import AutoTokenizer, GPTNeoXConfig, GPTNeoXForCausalLM
 
 # ---- your from-scratch optimizers live here; register each one as you finish it ----
 from part2.adamw import AdamW  # e.g. from src.part2.optimizers.adamw import AdamW
-
+from part2.Nadamw import NAdamW  # e.g. from src.part2.optimizers.nadamw import NadamW
+from part2.Lion import Lion  # e.g. from src.part2.optimizers.lion import Lion
 OPTIMIZERS = {
     "adamw": lambda params, a: AdamW(params, lr=a.lr, betas=(0.9, 0.95), weight_decay=a.wd),
-    # "lion":  lambda params, a: Lion(params, lr=a.lr, ...),
-    # "adafactor": ...
+    "Nadamw":  lambda params, a: NAdamW(params, lr=a.lr, betas=(0.9, 0.95), weight_decay=a.wd),
+    "lion": lambda params, a: Lion(params, lr=a.lr, betas=(0.9, 0.99), weight_decay=a.wd)
     # "muon": ...
 }
 
@@ -168,7 +170,8 @@ def main():
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--wandb_project", default="anlp-a2")
     p.add_argument("--out_dir", default="checkpoints")
-    p.add_argument("--hf_user", default="https://huggingface.co/vidhyavasan", help="HF username/org; if set, pushes the final model to <hf_user>/anlp-a2-<optimizer>")
+    #p.add_argument("--hf_user", default="https://huggingface.co/vidhyavasan", help="HF username/org; if set, pushes the final model to <hf_user>/anlp-a2-<optimizer>")
+    p.add_argument("--hf_user",default="vidhyavasan",help="HF username/org",)
     args = p.parse_args()
 
     torch.manual_seed(args.seed)
@@ -222,16 +225,42 @@ def main():
             wandb.log({"val/loss": val, "test/bleu": bleu, "data_frac": frac, "tokens": tokens_seen}, step=step)
 
     os.makedirs(f"{args.out_dir}/{args.optimizer}", exist_ok=True)
-    model.save_pretrained(f"{args.out_dir}/{args.optimizer}")  # add checkpoints/ to .gitignore
-    tok.save_pretrained(f"{args.out_dir}/{args.optimizer}")
+
+    save_dir = f"{args.out_dir}/{args.optimizer}"
+
+# Save locally
+    model.save_pretrained(save_dir)
+    tok.save_pretrained(save_dir)
+
     if args.hf_user:
-        repo = f"{args.hf_user}/anlp-a2-{args.optimizer}"
-        model.push_to_hub(repo)  # creates the repo if needed (public by default)
-        tok.push_to_hub(repo)
-        print(f"Pushed to https://huggingface.co/{repo}")
-        wandb.summary["hf_checkpoint"] = f"https://huggingface.co/{repo}"
+        from huggingface_hub import HfApi
+
+        repo_id = f"{args.hf_user}/ANLP-A2"
+
+        api = HfApi()
+
+    # Create the repository if it doesn't exist
+        api.create_repo(
+            repo_id=repo_id,
+            repo_type="model",
+            exist_ok=True,
+            )
+
+    # Upload this optimizer's model into its own subfolder
+        api.upload_folder(
+            folder_path=save_dir,
+        repo_id=repo_id,
+        repo_type="model",
+        path_in_repo=args.optimizer,
+        )
+
+        print(f"Pushed {args.optimizer} model to:")
+        print(f"https://huggingface.co/{repo_id}/tree/main/{args.optimizer}")
+
+        wandb.summary["hf_checkpoint"] = (
+        f"https://huggingface.co/{repo_id}/tree/main/{args.optimizer}"
+        )
+
     wandb.finish()
-
-
 if __name__ == "__main__":
     main()
