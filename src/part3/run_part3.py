@@ -23,7 +23,7 @@ import torch.nn.functional as F
 from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from decoding import beam_search, greedy, top_k_sampling, top_p_sampling
+from part3.decoding import beam_search, greedy, top_k_sampling, top_p_sampling
 
 
 def load_samples(args, tok):

@@ -23,12 +23,13 @@ from transformers import AutoTokenizer, GPTNeoXConfig, GPTNeoXForCausalLM
 from part2.adamw import AdamW  # e.g. from src.part2.optimizers.adamw import AdamW
 from part2.Nadamw import NAdamW  # e.g. from src.part2.optimizers.nadamw import NadamW
 from part2.Lion import Lion  # e.g. from src.part2.optimizers.lion import Lion
-
+from part2.muon import Muon
 OPTIMIZERS = {
     "adamw": lambda params, a: AdamW(params, lr=a.lr, betas=(0.9, 0.95), weight_decay=a.wd),
     "Nadamw":  lambda params, a: NAdamW(params, lr=a.lr, betas=(0.9, 0.95), weight_decay=a.wd),
-    "Lion": lambda params, a: Lion(params, lr=a.lr, betas=(0.9, 0.99), weight_decay=a.wd)
-    # "muon": ...
+    "Lion": lambda params, a: Lion(params, lr=a.lr, betas=(0.9, 0.99), weight_decay=a.wd),
+    "muon": lambda groups, a: Muon(groups, lr=a.lr, weight_decay=a.wd, adjust_lr="match_rms"),
+
 }
 
 
